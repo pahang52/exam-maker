@@ -1,0 +1,6 @@
+{
+  "appId": "com.nikzadfard.exammaker",
+  "appName": "طراحی آزمون نیکزاد",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
