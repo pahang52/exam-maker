@@ -25,11 +25,8 @@ export function ExamInfo({ examData, setExamData, onNext }: ExamInfoProps) {
         <div className="p-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            {/* نام و نام خانوادگی */}
             <div className="space-y-2">
-              <label className="block text-gray-700 font-medium">
-                نام و نام خانوادگی
-              </label>
+              <label className="block text-gray-700 font-medium">نام و نام خانوادگی</label>
               <input
                 type="text"
                 value={examData.studentName}
@@ -39,11 +36,8 @@ export function ExamInfo({ examData, setExamData, onNext }: ExamInfoProps) {
               />
             </div>
 
-            {/* نام پدر */}
             <div className="space-y-2">
-              <label className="block text-gray-700 font-medium">
-                نام پدر
-              </label>
+              <label className="block text-gray-700 font-medium">نام پدر</label>
               <input
                 type="text"
                 value={examData.fatherName}
@@ -53,11 +47,8 @@ export function ExamInfo({ examData, setExamData, onNext }: ExamInfoProps) {
               />
             </div>
 
-            {/* نام درس */}
             <div className="space-y-2">
-              <label className="block text-gray-700 font-medium">
-                نام درس
-              </label>
+              <label className="block text-gray-700 font-medium">نام درس</label>
               <input
                 type="text"
                 value={examData.courseName}
@@ -67,11 +58,8 @@ export function ExamInfo({ examData, setExamData, onNext }: ExamInfoProps) {
               />
             </div>
 
-            {/* پایه */}
             <div className="space-y-2">
-              <label className="block text-gray-700 font-medium">
-                پایه تحصیلی
-              </label>
+              <label className="block text-gray-700 font-medium">پایه تحصیلی</label>
               <select
                 value={examData.grade}
                 onChange={e => handleChange('grade', e.target.value)}
@@ -87,11 +75,8 @@ export function ExamInfo({ examData, setExamData, onNext }: ExamInfoProps) {
               </select>
             </div>
 
-            {/* تاریخ */}
             <div className="space-y-2">
-              <label className="block text-gray-700 font-medium">
-                تاریخ برگزاری
-              </label>
+              <label className="block text-gray-700 font-medium">تاریخ برگزاری</label>
               <input
                 type="text"
                 value={examData.date}
@@ -101,11 +86,8 @@ export function ExamInfo({ examData, setExamData, onNext }: ExamInfoProps) {
               />
             </div>
 
-            {/* نوبت امتحانی */}
             <div className="space-y-2">
-              <label className="block text-gray-700 font-medium">
-                نوبت امتحانی
-              </label>
+              <label className="block text-gray-700 font-medium">نوبت امتحانی</label>
               <select
                 value={examData.examSession}
                 onChange={e => handleChange('examSession', e.target.value)}
@@ -123,11 +105,8 @@ export function ExamInfo({ examData, setExamData, onNext }: ExamInfoProps) {
               </select>
             </div>
 
-            {/* اداره آموزش و پرورش */}
             <div className="space-y-2">
-              <label className="block text-gray-700 font-medium">
-                اداره آموزش و پرورش
-              </label>
+              <label className="block text-gray-700 font-medium">اداره آموزش و پرورش</label>
               <input
                 type="text"
                 value={examData.educationOffice}
@@ -137,11 +116,8 @@ export function ExamInfo({ examData, setExamData, onNext }: ExamInfoProps) {
               />
             </div>
 
-            {/* نام دبیرستان */}
             <div className="space-y-2">
-              <label className="block text-gray-700 font-medium">
-                نام دبیرستان
-              </label>
+              <label className="block text-gray-700 font-medium">نام دبیرستان</label>
               <input
                 type="text"
                 value={examData.schoolName}
@@ -152,7 +128,6 @@ export function ExamInfo({ examData, setExamData, onNext }: ExamInfoProps) {
             </div>
           </div>
 
-          {/* دکمه ادامه - همیشه فعال */}
           <div className="mt-8 flex justify-end">
             <button
               onClick={onNext}
