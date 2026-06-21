@@ -11,8 +11,6 @@ export function ExamInfo({ examData, setExamData, onNext }: ExamInfoProps) {
     setExamData(prev => ({ ...prev, [field]: value }));
   };
 
-  const isFormComplete = Object.values(examData).every(v => v.trim() !== '');
-
   return (
     <div className="max-w-4xl mx-auto">
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
@@ -26,10 +24,11 @@ export function ExamInfo({ examData, setExamData, onNext }: ExamInfoProps) {
 
         <div className="p-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
             {/* نام و نام خانوادگی */}
             <div className="space-y-2">
               <label className="block text-gray-700 font-medium">
-                <span className="text-red-500">*</span> نام و نام خانوادگی
+                نام و نام خانوادگی
               </label>
               <input
                 type="text"
@@ -43,7 +42,7 @@ export function ExamInfo({ examData, setExamData, onNext }: ExamInfoProps) {
             {/* نام پدر */}
             <div className="space-y-2">
               <label className="block text-gray-700 font-medium">
-                <span className="text-red-500">*</span> نام پدر
+                نام پدر
               </label>
               <input
                 type="text"
@@ -57,7 +56,7 @@ export function ExamInfo({ examData, setExamData, onNext }: ExamInfoProps) {
             {/* نام درس */}
             <div className="space-y-2">
               <label className="block text-gray-700 font-medium">
-                <span className="text-red-500">*</span> نام درس
+                نام درس
               </label>
               <input
                 type="text"
@@ -71,7 +70,7 @@ export function ExamInfo({ examData, setExamData, onNext }: ExamInfoProps) {
             {/* پایه */}
             <div className="space-y-2">
               <label className="block text-gray-700 font-medium">
-                <span className="text-red-500">*</span> پایه تحصیلی
+                پایه تحصیلی
               </label>
               <select
                 value={examData.grade}
@@ -91,7 +90,7 @@ export function ExamInfo({ examData, setExamData, onNext }: ExamInfoProps) {
             {/* تاریخ */}
             <div className="space-y-2">
               <label className="block text-gray-700 font-medium">
-                <span className="text-red-500">*</span> تاریخ برگزاری
+                تاریخ برگزاری
               </label>
               <input
                 type="text"
@@ -105,7 +104,7 @@ export function ExamInfo({ examData, setExamData, onNext }: ExamInfoProps) {
             {/* نوبت امتحانی */}
             <div className="space-y-2">
               <label className="block text-gray-700 font-medium">
-                <span className="text-red-500">*</span> نوبت امتحانی
+                نوبت امتحانی
               </label>
               <select
                 value={examData.examSession}
@@ -127,7 +126,7 @@ export function ExamInfo({ examData, setExamData, onNext }: ExamInfoProps) {
             {/* اداره آموزش و پرورش */}
             <div className="space-y-2">
               <label className="block text-gray-700 font-medium">
-                <span className="text-red-500">*</span> اداره آموزش و پرورش
+                اداره آموزش و پرورش
               </label>
               <input
                 type="text"
@@ -141,7 +140,7 @@ export function ExamInfo({ examData, setExamData, onNext }: ExamInfoProps) {
             {/* نام دبیرستان */}
             <div className="space-y-2">
               <label className="block text-gray-700 font-medium">
-                <span className="text-red-500">*</span> نام دبیرستان
+                نام دبیرستان
               </label>
               <input
                 type="text"
@@ -153,16 +152,11 @@ export function ExamInfo({ examData, setExamData, onNext }: ExamInfoProps) {
             </div>
           </div>
 
-          {/* دکمه ادامه */}
+          {/* دکمه ادامه - همیشه فعال */}
           <div className="mt-8 flex justify-end">
             <button
               onClick={onNext}
-              disabled={!isFormComplete}
-              className={`flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-lg transition-all ${
-                isFormComplete
-                  ? 'bg-gradient-to-l from-blue-500 to-indigo-600 text-white hover:shadow-xl hover:scale-105'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+              className="flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-lg transition-all bg-gradient-to-l from-blue-500 to-indigo-600 text-white hover:shadow-xl hover:scale-105"
             >
               <span>مرحله بعد</span>
               <span>←</span>
@@ -172,4 +166,4 @@ export function ExamInfo({ examData, setExamData, onNext }: ExamInfoProps) {
       </div>
     </div>
   );
-              }
+}
