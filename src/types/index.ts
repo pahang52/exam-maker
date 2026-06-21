@@ -108,3 +108,9 @@ export const examSessions = [
   'ترم دوم',
   'پایان سال',
 ];
+
+// لیست بارم‌های قابل انتخاب از 0.25 تا 10
+export const pointOptions: number[] = [];
+for (let i = 0.25; i <= 10; i += 0.25) {
+  pointOptions.push(Math.round(i * 100) / 100);
+}
