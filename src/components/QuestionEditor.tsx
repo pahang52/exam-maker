@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Question, QuestionType, questionTypeLabels, questionTypeIcons } from '../types';
+import { Question, QuestionType, questionTypeLabels, questionTypeIcons, pointOptions } from '../types';
 
 interface QuestionEditorProps {
   questions: Question[];
@@ -88,7 +88,7 @@ export function QuestionEditor({ questions, setQuestions }: QuestionEditorProps)
                 لیست سوالات
               </h3>
               <p className="text-purple-100 text-sm mt-1">
-                تعداد سوالات: {questions.length}
+                تعداد سوالات: {questions.length} | مجموع نمره: {questions.reduce((s, q) => s + q.points, 0)}
               </p>
             </div>
 
@@ -104,7 +104,7 @@ export function QuestionEditor({ questions, setQuestions }: QuestionEditorProps)
                       key={question.id}
                       className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
                     >
-                      <span className="bg-blue-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                      <span className="bg-blue-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">
                         {index + 1}
                       </span>
                       <div className="flex-1 min-w-0">
@@ -350,7 +350,7 @@ function QuestionForm({ type, onAdd, onCancel }: QuestionFormProps) {
                   <button
                     type="button"
                     onClick={() => setCorrectOption(index)}
-                    className={`w-10 h-10 rounded-full font-bold transition-all ${
+                    className={`w-10 h-10 rounded-full font-bold transition-all flex-shrink-0 ${
                       correctOption === index
                         ? 'bg-green-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -391,7 +391,7 @@ function QuestionForm({ type, onAdd, onCancel }: QuestionFormProps) {
                 <label className="block text-gray-700 font-medium mb-2">ستون الف:</label>
                 {leftItems.map((item, index) => (
                   <div key={index} className="flex gap-2 mb-2">
-                    <span className="w-8 h-8 bg-blue-100 text-blue-600 rounded flex items-center justify-center text-sm font-bold">
+                    <span className="w-8 h-8 bg-blue-100 text-blue-600 rounded flex items-center justify-center text-sm font-bold flex-shrink-0">
                       {index + 1}
                     </span>
                     <input
@@ -411,7 +411,7 @@ function QuestionForm({ type, onAdd, onCancel }: QuestionFormProps) {
                 <label className="block text-gray-700 font-medium mb-2">ستون ب:</label>
                 {rightItems.map((item, index) => (
                   <div key={index} className="flex gap-2 mb-2">
-                    <span className="w-8 h-8 bg-purple-100 text-purple-600 rounded flex items-center justify-center text-sm font-bold">
+                    <span className="w-8 h-8 bg-purple-100 text-purple-600 rounded flex items-center justify-center text-sm font-bold flex-shrink-0">
                       {['الف', 'ب', 'ج', 'د', 'ه'][index]}
                     </span>
                     <input
@@ -492,16 +492,22 @@ function QuestionForm({ type, onAdd, onCancel }: QuestionFormProps) {
           />
         </div>
 
+        {/* بارم‌بندی به صورت لیست انتخابی */}
         <div>
-          <label className="block text-gray-700 font-medium mb-2">نمره:</label>
-          <input
-            type="number"
-            min="0.5"
-            step="0.5"
+          <label className="block text-gray-700 font-medium mb-2">
+            بارم سوال: <span className="text-blue-600 font-bold">{points} نمره</span>
+          </label>
+          <select
             value={points}
             onChange={e => setPoints(Number(e.target.value))}
-            className="w-32 px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none"
-          />
+            className="w-40 px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none bg-white text-gray-700"
+          >
+            {pointOptions.map(p => (
+              <option key={p} value={p}>
+                {p} نمره
+              </option>
+            ))}
+          </select>
         </div>
 
         {renderForm()}
