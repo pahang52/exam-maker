@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@types/file-saver": "^2.0.7",
+    "@capacitor/core": "^6.0.0",          // ← جدید
+    "@capacitor/android": "^6.0.0",        // ← جدید
     "clsx": "2.1.1",
     "docx": "^9.7.1",
     "file-saver": "^2.0.5",
@@ -23,6 +25,7 @@
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "5.1.1",
+    "@capacitor/cli": "^6.0.0",             // ← جدید
     "tailwindcss": "4.1.17",
     "typescript": "5.9.3",
     "vite": "7.3.2",
