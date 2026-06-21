@@ -6,9 +6,7 @@ interface ExamPreviewProps {
 }
 
 export function ExamPreview({ examData, questions }: ExamPreviewProps) {
-  const getTotalPoints = () => {
-    return questions.reduce((sum, q) => sum + q.points, 0);
-  };
+  const getTotalPoints = () => questions.reduce((sum, q) => sum + q.points, 0);
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -27,46 +25,41 @@ export function ExamPreview({ examData, questions }: ExamPreviewProps) {
           </div>
         ) : (
           <div className="p-8" id="exam-content">
-            {/* Header */}
             <div className="border-4 border-gray-800 p-6 mb-8">
-              <div className="grid grid-cols-3 gap-4 text-center mb-6">
-                <div className="border-b-2 border-gray-400 pb-2">
-                  <p className="text-gray-600 text-sm">نام و نام خانوادگی:</p>
-                  <div className="h-6"></div>
-                </div>
-                <div className="border-b-2 border-gray-400 pb-2">
-                  <p className="text-gray-600 text-sm">نام پدر:</p>
-                  <div className="h-6"></div>
-                </div>
-                <div className="border-b-2 border-gray-400 pb-2">
-                  <p className="text-gray-600 text-sm">پایه:</p>
-                  <p className="font-bold">{examData.grade}</p>
-                </div>
-              </div>
-
-              <div className="text-center border-y-2 border-gray-400 py-4 mb-6">
+              <div className="text-center border-b-2 border-gray-400 pb-4 mb-4">
                 <h1 className="text-xl font-bold">اداره آموزش و پرورش {examData.educationOffice}</h1>
                 <h2 className="text-lg font-bold mt-1">دبیرستان {examData.schoolName}</h2>
                 <h3 className="text-2xl font-bold mt-3 text-blue-600">آزمون {examData.courseName}</h3>
                 <p className="text-gray-600 mt-1">{examData.examSession}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 text-center">
+              <div className="grid grid-cols-2 gap-4 text-center mb-4">
+                <div className="border-b-2 border-gray-400 pb-2">
+                  <p className="text-gray-600 text-sm">پایه:</p>
+                  <p className="font-bold">{examData.grade}</p>
+                </div>
                 <div className="border-b-2 border-gray-400 pb-2">
                   <p className="text-gray-600 text-sm">تاریخ:</p>
                   <p className="font-bold">{examData.date}</p>
                 </div>
-                <div className="border-b-2 border-gray-400 pb-2">
-                  <p className="text-gray-600 text-sm">نمره کل:</p>
-                  <p className="font-bold text-lg">{getTotalPoints()} نمره</p>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div className="border-b-2 border-gray-400 pb-2 col-span-2">
+                  <p className="text-gray-600 text-sm">نام و نام خانوادگی: {examData.studentName || '.................................'}</p>
                 </div>
+                <div className="border-b-2 border-gray-400 pb-2">
+                  <p className="text-gray-600 text-sm">نام پدر: {examData.fatherName || '.................'}</p>
+                </div>
+              </div>
+
+              <div className="mt-4 text-center">
+                <span className="font-bold text-lg">نمره کل: {getTotalPoints()} نمره</span>
               </div>
             </div>
 
-            {/* Questions by Type */}
             {renderQuestionsByType(questions)}
 
-            {/* Footer */}
             <div className="mt-12 pt-6 border-t-2 border-gray-300 text-center">
               <p className="text-gray-500 text-sm">طراحی شده توسط: نیکزاد فرد</p>
             </div>
@@ -91,15 +84,17 @@ function renderQuestionsByType(questions: Question[]) {
     const typeQuestions = grouped[type];
     if (!typeQuestions || typeQuestions.length === 0) return null;
 
+    const typePoints = typeQuestions.reduce((s, q) => s + q.points, 0);
+
     return (
       <div key={type} className="mb-8">
-        <div className="bg-gray-100 px-4 py-2 rounded-lg mb-4 flex items-center gap-2">
+        <div className="bg-blue-50 border-r-4 border-blue-500 px-4 py-2 rounded-lg mb-4 flex items-center gap-2">
           <span className="text-xl">{getTypeIcon(type)}</span>
           <h3 className="font-bold text-gray-700">
             سوالات {questionTypeLabels[type as keyof typeof questionTypeLabels]}
           </h3>
           <span className="text-gray-500 text-sm mr-2">
-            ({typeQuestions.length} سوال - {typeQuestions.reduce((s, q) => s + q.points, 0)} نمره)
+            ({typeQuestions.length} سوال - {typePoints} نمره)
           </span>
         </div>
 
@@ -115,7 +110,7 @@ function renderQuestionsByType(questions: Question[]) {
             </div>
           ))}
         </div>
-        
+
         <div className="border-b border-gray-200 my-4"></div>
         {(questionNumber += typeQuestions.length)}
       </div>
@@ -177,7 +172,7 @@ function renderQuestion(question: Question) {
             {question.options.map((opt, i) => (
               <div key={i} className="flex gap-2">
                 <span className="font-bold text-gray-600">
-                  {['الف', 'ب', 'ج', 'د', 'ه', 'و'][i]}) 
+                  {['الف', 'ب', 'ج', 'د', 'ه', 'و'][i]})
                 </span>
                 <span>{opt}</span>
               </div>
@@ -192,6 +187,7 @@ function renderQuestion(question: Question) {
           <p className="font-medium mb-4">{question.question}</p>
           <div className="grid grid-cols-2 gap-8">
             <div className="space-y-2">
+              <p className="font-bold text-sm text-gray-600 border-b pb-1">ستون الف</p>
               {question.leftItems.map((item, i) => (
                 <div key={i} className="flex gap-2 items-center">
                   <span className="w-6 h-6 bg-gray-200 rounded text-center text-sm">{i + 1}</span>
@@ -200,6 +196,7 @@ function renderQuestion(question: Question) {
               ))}
             </div>
             <div className="space-y-2">
+              <p className="font-bold text-sm text-gray-600 border-b pb-1">ستون ب</p>
               {question.rightItems.map((item, i) => (
                 <div key={i} className="flex gap-2 items-center">
                   <span className="w-6 h-6 bg-gray-200 rounded text-center text-sm">
