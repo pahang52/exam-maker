@@ -1,5 +1,4 @@
-import jsPDF from 'jspdf';
-import { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle } from 'docx';
+import { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle, Table, TableRow, TableCell, WidthType, ShadingType } from 'docx';
 import { saveAs } from 'file-saver';
 import { ExamData, Question, questionTypeLabels } from '../types';
 
@@ -8,40 +7,15 @@ function toPersianNumbers(num: number | string): string {
   return String(num).replace(/[0-9]/g, d => persianDigits[parseInt(d)]);
 }
 
+// ===== PDF Export با استفاده از print =====
 export async function generatePDF(examData: ExamData, questions: Question[]): Promise<void> {
-  const pdf = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4',
-  });
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    alert('لطفاً popup را برای این سایت فعال کنید');
+    return;
+  }
 
-  pdf.setFont('helvetica');
-  
-  let yPosition = 20;
-  const pageWidth = 210;
-  const margin = 15;
-  const contentWidth = pageWidth - 2 * margin;
-
-  pdf.setDrawColor(0, 0, 0);
-  pdf.setLineWidth(1);
-  pdf.rect(margin, yPosition, contentWidth, 60);
-
-  pdf.setFontSize(14);
-  pdf.text(`Education Office: ${examData.educationOffice}`, pageWidth / 2, yPosition + 12, { align: 'center' });
-  pdf.text(`High School: ${examData.schoolName}`, pageWidth / 2, yPosition + 22, { align: 'center' });
-  
-  pdf.setFontSize(18);
-  pdf.text(`Exam: ${examData.courseName}`, pageWidth / 2, yPosition + 35, { align: 'center' });
-  
-  pdf.setFontSize(12);
-  pdf.text(`Session: ${examData.examSession}`, pageWidth / 2, yPosition + 45, { align: 'center' });
-  pdf.text(`Date: ${examData.date} | Grade: ${examData.grade}`, pageWidth / 2, yPosition + 55, { align: 'center' });
-
-  yPosition += 70;
-
-  pdf.setFontSize(10);
-  pdf.text('Name: _________________ Father\'s Name: _________________', margin, yPosition);
-  yPosition += 15;
+  const totalPoints = questions.reduce((s, q) => s + q.points, 0);
 
   const grouped = questions.reduce((acc, q) => {
     if (!acc[q.type]) acc[q.type] = [];
@@ -51,119 +25,305 @@ export async function generatePDF(examData: ExamData, questions: Question[]): Pr
 
   const order = ['true-false', 'fill-blank', 'short-answer', 'multiple-choice', 'matching', 'descriptive'];
   let questionNumber = 1;
-  const totalPoints = questions.reduce((s, q) => s + q.points, 0);
-
-  pdf.text(`Total Points: ${totalPoints}`, margin, yPosition);
-  yPosition += 10;
+  let questionsHTML = '';
 
   for (const type of order) {
     const typeQuestions = grouped[type];
     if (!typeQuestions || typeQuestions.length === 0) continue;
 
-    pdf.setFillColor(240, 240, 240);
-    pdf.rect(margin, yPosition, contentWidth, 8, 'F');
-    pdf.setFontSize(11);
-    pdf.text(
-      `${questionTypeLabels[type as keyof typeof questionTypeLabels]} (${typeQuestions.length} questions)`,
-      margin + 2,
-      yPosition + 6
-    );
-    yPosition += 12;
+    const typePoints = typeQuestions.reduce((s, q) => s + q.points, 0);
+    questionsHTML += `
+      <div class="section-header">
+        ${questionTypeLabels[type as keyof typeof questionTypeLabels]}
+        (${toPersianNumbers(typeQuestions.length)} سوال - ${toPersianNumbers(typePoints)} نمره)
+      </div>
+    `;
 
     for (const q of typeQuestions) {
-      if (yPosition > 270) {
-        pdf.addPage();
-        yPosition = 20;
-      }
-
-      pdf.setFontSize(10);
-      const questionText = `${questionNumber}. ${q.question}`;
-      const lines = pdf.splitTextToSize(questionText, contentWidth - 10);
-      pdf.text(lines, margin + 5, yPosition);
-      yPosition += lines.length * 5 + 3;
+      let questionContent = `<p class="question-text">${toPersianNumbers(questionNumber)}. ${q.question}</p>`;
 
       if (q.type === 'true-false') {
-        pdf.text('(   ) True    (   ) False', margin + 10, yPosition);
-        yPosition += 5;
+        questionContent += `<div class="true-false">(   ) صحیح &nbsp;&nbsp;&nbsp;&nbsp; (   ) غلط</div>`;
       } else if (q.type === 'multiple-choice') {
+        questionContent += `<div class="options-grid">`;
         q.options.forEach((opt, i) => {
-          const letter = String.fromCharCode(65 + i);
-          pdf.text(`${letter}) ${opt}`, margin + 10, yPosition);
-          yPosition += 5;
+          const letters = ['الف', 'ب', 'ج', 'د', 'ه', 'و'];
+          questionContent += `<div class="option">${letters[i]}) ${opt}</div>`;
         });
+        questionContent += `</div>`;
       } else if (q.type === 'matching') {
-        pdf.text('Column A:', margin + 10, yPosition);
-        yPosition += 5;
-        q.leftItems.forEach((item, i) => {
-          pdf.text(`${i + 1}. ${item}`, margin + 15, yPosition);
-          yPosition += 5;
-        });
-        pdf.text('Column B:', margin + 10, yPosition);
-        yPosition += 5;
-        q.rightItems.forEach((item, i) => {
-          const letter = String.fromCharCode(65 + i);
-          pdf.text(`${letter}. ${item}`, margin + 15, yPosition);
-          yPosition += 5;
-        });
+        questionContent += `<div class="matching-grid">
+          <div class="matching-col">
+            <div class="col-header">ستون الف</div>
+            ${q.leftItems.map((item, i) => `<div class="match-item">${toPersianNumbers(i + 1)}. ${item}</div>`).join('')}
+          </div>
+          <div class="matching-col">
+            <div class="col-header">ستون ب</div>
+            ${q.rightItems.map((item, i) => {
+              const letters = ['الف', 'ب', 'ج', 'د', 'ه'];
+              return `<div class="match-item">${letters[i]}. ${item}</div>`;
+            }).join('')}
+          </div>
+        </div>`;
       } else if (q.type === 'descriptive') {
-        for (let i = 0; i < Math.min(q.lines, 5); i++) {
-          pdf.line(margin + 5, yPosition, margin + contentWidth - 5, yPosition);
-          yPosition += 6;
-        }
+        const linesHTML = Array.from({ length: Math.min(q.lines, 8) })
+          .map(() => `<div class="answer-line"></div>`).join('');
+        questionContent += `<div class="answer-lines">${linesHTML}</div>`;
       } else {
-        pdf.line(margin + 5, yPosition, margin + contentWidth - 5, yPosition);
-        yPosition += 6;
+        questionContent += `<div class="answer-lines"><div class="answer-line"></div><div class="answer-line"></div></div>`;
       }
 
-      yPosition += 5;
+      questionsHTML += `<div class="question">${questionContent}</div>`;
       questionNumber++;
     }
-    yPosition += 5;
   }
 
-  pdf.setFontSize(8);
-  pdf.text('Designed by: Nikzad Fard', pageWidth / 2, 285, { align: 'center' });
-  pdf.save(`exam-${examData.courseName}-${examData.date}.pdf`);
+  const html = `
+    <!DOCTYPE html>
+    <html dir="rtl" lang="fa">
+    <head>
+      <meta charset="UTF-8">
+      <title>آزمون ${examData.courseName}</title>
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+          font-family: 'Vazirmatn', Tahoma, Arial, sans-serif;
+          font-size: 13px;
+          line-height: 1.8;
+          color: #000;
+          background: #fff;
+          direction: rtl;
+        }
+
+        .page {
+          width: 210mm;
+          min-height: 297mm;
+          margin: 0 auto;
+          padding: 15mm 15mm 10mm 15mm;
+        }
+
+        .header-box {
+          border: 3px solid #000;
+          padding: 12px;
+          margin-bottom: 15px;
+        }
+
+        .header-top {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          gap: 8px;
+          margin-bottom: 10px;
+          text-align: center;
+          font-size: 12px;
+        }
+
+        .header-main {
+          text-align: center;
+          border-top: 2px solid #333;
+          border-bottom: 2px solid #333;
+          padding: 8px 0;
+          margin: 8px 0;
+        }
+
+        .header-main h1 { font-size: 14px; margin-bottom: 4px; }
+        .header-main h2 { font-size: 13px; margin-bottom: 4px; }
+        .header-main h3 { font-size: 18px; font-weight: bold; color: #1a56db; }
+
+        .header-bottom {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+          text-align: center;
+          font-size: 12px;
+        }
+
+        .student-info {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+          margin-bottom: 12px;
+          font-size: 12px;
+        }
+
+        .info-field {
+          border-bottom: 1px solid #666;
+          padding-bottom: 4px;
+        }
+
+        .total-points {
+          text-align: center;
+          font-weight: bold;
+          font-size: 13px;
+          margin-bottom: 12px;
+          padding: 6px;
+          background: #f0f4ff;
+          border-radius: 4px;
+        }
+
+        .section-header {
+          background: #e0e0e0;
+          padding: 6px 12px;
+          font-weight: bold;
+          font-size: 13px;
+          margin: 12px 0 8px 0;
+          border-right: 4px solid #1a56db;
+        }
+
+        .question {
+          margin-bottom: 12px;
+          padding: 0 8px;
+        }
+
+        .question-text {
+          font-weight: 500;
+          margin-bottom: 6px;
+          font-size: 13px;
+        }
+
+        .true-false {
+          padding: 4px 16px;
+          font-size: 13px;
+          color: #333;
+        }
+
+        .options-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 4px 16px;
+          padding: 4px 16px;
+        }
+
+        .option { font-size: 12px; }
+
+        .matching-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+          padding: 4px 16px;
+        }
+
+        .col-header {
+          font-weight: bold;
+          font-size: 12px;
+          border-bottom: 1px solid #999;
+          margin-bottom: 4px;
+          padding-bottom: 2px;
+        }
+
+        .match-item { font-size: 12px; padding: 2px 0; }
+
+        .answer-lines { padding: 4px 8px; }
+        
+        .answer-line {
+          border-bottom: 1px solid #666;
+          height: 24px;
+          margin-bottom: 6px;
+        }
+
+        .footer {
+          text-align: center;
+          border-top: 1px solid #ccc;
+          padding-top: 8px;
+          margin-top: 20px;
+          font-size: 11px;
+          color: #666;
+        }
+
+        @media print {
+          body { background: #fff; }
+          .page { margin: 0; padding: 10mm; }
+          @page { size: A4; margin: 0; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="page">
+        <div class="header-box">
+          <div class="header-main">
+            <h1>اداره آموزش و پرورش ${examData.educationOffice || '...........'}</h1>
+            <h2>دبیرستان ${examData.schoolName || '...........'}</h2>
+            <h3>آزمون درس: ${examData.courseName || '...........'}</h3>
+          </div>
+          <div class="header-bottom">
+            <div>پایه: <strong>${examData.grade || '...........'}</strong></div>
+            <div>نوبت: <strong>${examData.examSession || '...........'}</strong></div>
+            <div>تاریخ: <strong>${examData.date || '...........'}</strong></div>
+            <div>نمره کل: <strong>${toPersianNumbers(totalPoints)} نمره</strong></div>
+          </div>
+        </div>
+
+        <div class="student-info">
+          <div class="info-field">نام و نام خانوادگی: ${examData.studentName || '...........................'}</div>
+          <div class="info-field">نام پدر: ${examData.fatherName || '...........................'}</div>
+        </div>
+
+        ${questionsHTML}
+
+        <div class="footer">
+          <p>طراحی شده توسط: نیکزاد فرد</p>
+        </div>
+      </div>
+      <script>
+        window.onload = function() {
+          window.print();
+        }
+      </script>
+    </body>
+    </html>
+  `;
+
+  printWindow.document.write(html);
+  printWindow.document.close();
 }
 
+// ===== Word Export =====
 export async function generateWord(examData: ExamData, questions: Question[]): Promise<void> {
   const children: Paragraph[] = [];
 
+  const rtlRun = (text: string, options: { bold?: boolean; size?: number; italics?: boolean; color?: string } = {}) =>
+    new TextRun({ text, rightToLeft: true, bold: options.bold, size: options.size ?? 22, italics: options.italics, color: options.color });
+
+  // ===== سربرگ =====
   children.push(
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      children: [new TextRun({ text: `اداره آموزش و پرورش ${examData.educationOffice}`, bold: true, size: 28, rightToLeft: true })],
+      spacing: { after: 100 },
+      children: [rtlRun(`اداره آموزش و پرورش ${examData.educationOffice}`, { bold: true, size: 26 })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      children: [new TextRun({ text: `دبیرستان ${examData.schoolName}`, bold: true, size: 24, rightToLeft: true })],
+      spacing: { after: 100 },
+      children: [rtlRun(`دبیرستان ${examData.schoolName}`, { bold: true, size: 24 })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: 200 },
-      children: [new TextRun({ text: `آزمون ${examData.courseName}`, bold: true, size: 32, rightToLeft: true })],
+      spacing: { before: 150, after: 150 },
+      children: [rtlRun(`آزمون درس: ${examData.courseName}`, { bold: true, size: 32 })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      children: [new TextRun({ text: examData.examSession, size: 24, rightToLeft: true })],
+      spacing: { after: 100 },
+      children: [rtlRun(`${examData.examSession}  |  پایه: ${examData.grade}  |  تاریخ: ${examData.date}`, { size: 22 })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: 200 },
-      children: [new TextRun({ text: `تاریخ: ${examData.date}  |  پایه: ${examData.grade}`, size: 22, rightToLeft: true })],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 200, after: 200 },
-      children: [new TextRun({ text: 'نام: _________________  نام پدر: _________________', size: 22, rightToLeft: true })],
+      spacing: { before: 150, after: 200 },
+      children: [
+        rtlRun('نام و نام خانوادگی: ___________________   ', { size: 22 }),
+        rtlRun('نام پدر: ___________________', { size: 22 }),
+      ],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 300 },
-      children: [new TextRun({ text: `نمره کل: ${questions.reduce((s, q) => s + q.points, 0)} نمره`, bold: true, size: 22, rightToLeft: true })],
+      children: [rtlRun(`نمره کل: ${questions.reduce((s, q) => s + q.points, 0)} نمره`, { bold: true, size: 24 })],
     })
   );
 
+  // ===== سوالات =====
   const grouped = questions.reduce((acc, q) => {
     if (!acc[q.type]) acc[q.type] = [];
     acc[q.type].push(q);
@@ -177,32 +337,28 @@ export async function generateWord(examData: ExamData, questions: Question[]): P
     const typeQuestions = grouped[type];
     if (!typeQuestions || typeQuestions.length === 0) continue;
 
+    const typePoints = typeQuestions.reduce((s, q) => s + q.points, 0);
+
+    // عنوان نوع سوال
     children.push(
       new Paragraph({
-        shading: { fill: 'E0E0E0' },
-        spacing: { before: 200, after: 100 },
+        spacing: { before: 250, after: 120 },
+        shading: { type: ShadingType.SOLID, fill: 'D0D8FF' },
         children: [
-          new TextRun({
-            text: `سوالات ${questionTypeLabels[type as keyof typeof questionTypeLabels]} (${typeQuestions.length} سوال)`,
-            bold: true,
-            size: 24,
-            rightToLeft: true,
-          }),
+          rtlRun(
+            `سوالات ${questionTypeLabels[type as keyof typeof questionTypeLabels]} (${typeQuestions.length} سوال - ${typePoints} نمره)`,
+            { bold: true, size: 24 }
+          ),
         ],
       })
     );
 
     for (const q of typeQuestions) {
+      // متن سوال
       children.push(
         new Paragraph({
-          spacing: { before: 150 },
-          children: [
-            new TextRun({
-              text: `${questionNumber}. ${q.question}`,
-              size: 22,
-              rightToLeft: true,
-            }),
-          ],
+          spacing: { before: 150, after: 80 },
+          children: [rtlRun(`${questionNumber}. ${q.question}`, { bold: true, size: 22 })],
         })
       );
 
@@ -210,58 +366,71 @@ export async function generateWord(examData: ExamData, questions: Question[]): P
         children.push(
           new Paragraph({
             indent: { right: 500 },
-            children: [new TextRun({ text: '(   ) صحیح         (   ) غلط', size: 22, rightToLeft: true })],
+            spacing: { after: 100 },
+            children: [rtlRun('(   ) صحیح          (   ) غلط', { size: 22 })],
           })
         );
       } else if (q.type === 'multiple-choice') {
-        q.options.forEach((opt, i) => {
-          const letters = ['الف', 'ب', 'ج', 'د', 'ه', 'و'];
+        const letters = ['الف', 'ب', 'ج', 'د', 'ه', 'و'];
+        // گزینه‌ها دو تا دو تا در یک خط
+        for (let i = 0; i < q.options.length; i += 2) {
+          const text = q.options[i + 1]
+            ? `${letters[i]}) ${q.options[i]}          ${letters[i + 1]}) ${q.options[i + 1]}`
+            : `${letters[i]}) ${q.options[i]}`;
           children.push(
             new Paragraph({
               indent: { right: 500 },
-              children: [new TextRun({ text: `${letters[i]}) ${opt}`, size: 22, rightToLeft: true })],
+              spacing: { after: 80 },
+              children: [rtlRun(text, { size: 22 })],
             })
           );
-        });
+        }
       } else if (q.type === 'matching') {
-        children.push(
-          new Paragraph({
-            indent: { right: 500 },
-            children: [new TextRun({ text: 'ستون الف:', bold: true, size: 22, rightToLeft: true })],
-          })
-        );
-        q.leftItems.forEach((item, i) => {
-          children.push(
-            new Paragraph({
-              indent: { right: 700 },
-              children: [new TextRun({ text: `${toPersianNumbers(i + 1)}. ${item}`, size: 22, rightToLeft: true })],
+        const letters = ['الف', 'ب', 'ج', 'د', 'ه'];
+        // جدول ستون الف و ب
+        const maxRows = Math.max(q.leftItems.length, q.rightItems.length);
+        const rows: TableRow[] = [
+          new TableRow({
+            children: [
+              new TableCell({
+                width: { size: 50, type: WidthType.PERCENTAGE },
+                shading: { type: ShadingType.SOLID, fill: 'E8E8E8' },
+                children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [rtlRun('ستون الف', { bold: true, size: 20 })] })],
+              }),
+              new TableCell({
+                width: { size: 50, type: WidthType.PERCENTAGE },
+                shading: { type: ShadingType.SOLID, fill: 'E8E8E8' },
+                children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [rtlRun('ستون ب', { bold: true, size: 20 })] })],
+              }),
+            ],
+          }),
+          ...Array.from({ length: maxRows }, (_, i) =>
+            new TableRow({
+              children: [
+                new TableCell({
+                  children: [new Paragraph({ children: [rtlRun(q.leftItems[i] ? `${i + 1}. ${q.leftItems[i]}` : '', { size: 20 })] })],
+                }),
+                new TableCell({
+                  children: [new Paragraph({ children: [rtlRun(q.rightItems[i] ? `${letters[i]}. ${q.rightItems[i]}` : '', { size: 20 })] })],
+                }),
+              ],
             })
-          );
-        });
+          ),
+        ];
         children.push(
-          new Paragraph({
-            indent: { right: 500 },
-            children: [new TextRun({ text: 'ستون ب:', bold: true, size: 22, rightToLeft: true })],
-          })
+          new Table({
+            width: { size: 80, type: WidthType.PERCENTAGE },
+            rows,
+          }) as unknown as Paragraph
         );
-        q.rightItems.forEach((item, i) => {
-          const letters = ['الف', 'ب', 'ج', 'د', 'ه'];
-          children.push(
-            new Paragraph({
-              indent: { right: 700 },
-              children: [new TextRun({ text: `${letters[i]}. ${item}`, size: 22, rightToLeft: true })],
-            })
-          );
-        });
+        children.push(new Paragraph({ spacing: { after: 100 }, children: [] }));
       } else if (q.type === 'descriptive') {
-        for (let i = 0; i < q.lines; i++) {
+        for (let i = 0; i < Math.min(q.lines, 8); i++) {
           children.push(
             new Paragraph({
               spacing: { before: 150 },
-              border: {
-                bottom: { color: '000000', space: 1, style: BorderStyle.SINGLE, size: 6 },
-              },
-              children: [new TextRun({ text: '' })],
+              border: { bottom: { color: '000000', space: 1, style: BorderStyle.SINGLE, size: 6 } },
+              children: [rtlRun('', { size: 22 })],
             })
           );
         }
@@ -270,30 +439,24 @@ export async function generateWord(examData: ExamData, questions: Question[]): P
           children.push(
             new Paragraph({
               spacing: { before: 150 },
-              border: {
-                bottom: { color: '000000', space: 1, style: BorderStyle.SINGLE, size: 6 },
-              },
-              children: [new TextRun({ text: '' })],
+              border: { bottom: { color: '000000', space: 1, style: BorderStyle.SINGLE, size: 6 } },
+              children: [rtlRun('', { size: 22 })],
             })
           );
         }
       }
+
       questionNumber++;
     }
   }
 
+  // فوتر
   children.push(
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: 400 },
-      children: [
-        new TextRun({
-          text: 'طراحی شده توسط: نیکزاد فرد',
-          size: 18,
-          rightToLeft: true,
-          italics: true,
-        }),
-      ],
+      spacing: { before: 500 },
+      border: { top: { color: 'AAAAAA', space: 4, style: BorderStyle.SINGLE, size: 4 } },
+      children: [rtlRun('طراحی شده توسط: نیکزاد فرد', { size: 18, italics: true, color: '666666' })],
     })
   );
 
@@ -302,12 +465,7 @@ export async function generateWord(examData: ExamData, questions: Question[]): P
       {
         properties: {
           page: {
-            margin: {
-              top: 1000,
-              right: 1000,
-              bottom: 1000,
-              left: 1000,
-            },
+            margin: { top: 900, right: 900, bottom: 900, left: 900 },
           },
         },
         children,
@@ -316,5 +474,5 @@ export async function generateWord(examData: ExamData, questions: Question[]): P
   });
 
   const blob = await Packer.toBlob(doc);
-  saveAs(blob, `exam-${examData.courseName}-${examData.date}.docx`);
-    }
+  saveAs(blob, `exam-${examData.courseName || 'azmon'}-${examData.date || 'date'}.docx`);
+}
